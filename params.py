@@ -1,2 +1,2 @@
-train_file = "/Users/paul/Downloads/WestburyLab.Wikipedia.Corpus/train.txt"
-valid_file = "/Users/paul/Downloads/WestburyLab.Wikipedia.Corpus/valid.txt"
+train_file = "../nlp_data/train.txt"
+valid_file = "../nlp_data/valid.txt"
