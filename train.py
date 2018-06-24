@@ -2,6 +2,7 @@ import numpy as np
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint, TensorBoard
 from sklearn.model_selection import train_test_split
 from copy import deepcopy
+from params import train_file, valid_file
 
 from nlp import model
 
@@ -13,8 +14,6 @@ train_lines = 9
 valid_lines = 1
 steps_per_epoch = 4 # 30e6 / batch_size
 
-train_file = "/Users/paul/Downloads/WestburyLab.Wikipedia.Corpus/train.txt"
-valid_file = "/Users/paul/Downloads/WestburyLab.Wikipedia.Corpus/valid.txt"
 model = model(input_length)
 
 I = np.identity(27)
