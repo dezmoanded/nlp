@@ -1,6 +1,8 @@
-data_file = "/Users/paul/Downloads/WestburyLab.Wikipedia.Corpus/WestburyLab.Wikipedia.Corpus.txt"
-train_output = "/Users/paul/Downloads/WestburyLab.Wikipedia.Corpus/train.txt"
-valid_output = "/Users/paul/Downloads/WestburyLab.Wikipedia.Corpus/valid.txt"
+from sys import argv
+
+data_file = argv[1]
+train_output = argv[2]
+valid_output = argv[3]
 
 train_lines = 9
 valid_lines = 1
