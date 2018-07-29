@@ -1,20 +1,22 @@
 import numpy as np
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint, TensorBoard
+import keras.backend as K
 from sklearn.model_selection import train_test_split
 from copy import deepcopy
 from params import train_file, valid_file
+from layers import MyDebugWeights, callbacks
 
-from nlp import model
+from nlp import model2
 
 input_length = 512
 replace_n = 32
 epochs = 5
-batch_size = 4e2
+batch_size = 20
 train_lines = 9
 valid_lines = 1
 steps_per_epoch = 4 # 30e6 / batch_size
 
-model = model(input_length)
+model = model2(input_length)
 
 I = np.identity(27)
 def char_to_vector(char):
@@ -73,7 +75,8 @@ def train_generator():
         count += 1
         print("{} / {} batches done".format(count, steps_per_epoch))
 
-callbacks = [EarlyStopping(monitor='val_loss',
+_callbacks = [MyDebugWeights(),
+             EarlyStopping(monitor='val_loss',
                            patience=8,
                            verbose=1,
                            min_delta=1e-4),
@@ -86,12 +89,49 @@ callbacks = [EarlyStopping(monitor='val_loss',
                              filepath='weights/best_weights.hdf5',
                              save_best_only=True,
                              save_weights_only=True),
-             TensorBoard(log_dir='logs')]
+             TensorBoard(log_dir='logs', histogram_freq=1, write_grads=True)]
+params = {
+    'epochs': epochs,
+    'steps': steps_per_epoch,
+    'verbose': True,
+    'do_validation': True,
+}
+callbacks = callbacks(model, _callbacks, params)
 
-model.fit_generator(generator=train_generator(),
-                    steps_per_epoch=steps_per_epoch,
-                    epochs=epochs,
-                    verbose=2,
-                    callbacks=callbacks,
-                    validation_data=valid_generator(),
-                    validation_steps=steps_per_epoch * (valid_lines / train_lines))
+# model.fit_generator(generator=train_generator(),
+#                     steps_per_epoch=steps_per_epoch,
+#                     epochs=epochs,
+#                     verbose=2,
+#                     callbacks=callbacks,
+#                     validation_data=valid_generator(),
+#                     validation_steps=steps_per_epoch * (valid_lines / train_lines))
+
+def valid_data(val_x, val_y):
+    val_x, val_y, val_sample_weights = model._standardize_user_data(
+        val_x, val_y, None)
+    val_data = val_x + val_y + val_sample_weights
+    if model.uses_learning_phase and not isinstance(K.learning_phase(),
+                                                    int):
+        val_data += [0.]
+    return val_data
+
+callbacks.on_train_begin()
+train = train_generator()
+validate = valid_generator()
+for epoch in range(epochs):
+    callbacks.on_epoch_begin(epoch)
+    for batch in range(steps_per_epoch):
+        x, y = next(train)
+        callbacks.on_batch_begin(batch)
+        stats = model.train_on_batch(x, y)
+        print("%i %f" % (epoch, stats))
+        callbacks.on_batch_end(batch)
+
+        x, y = next(validate)
+        val_data = valid_data(x, y)
+        for cbk in callbacks:
+            cbk.validation_data = val_data
+        callbacks.on_epoch_end(epoch, {})
+        batch += 1
+    callbacks.on_epoch_end(epoch)
+callbacks.on_train_end()
