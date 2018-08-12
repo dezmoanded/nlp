@@ -29,8 +29,10 @@ class LayerNorm1D(Layer):
         super().build(input_shape)
 
     def call(self, x):
-        mean = K.mean(x, axis=-1, keepdims=True)
-        std = K.std(x, axis=-1, keepdims=True)
+        # mean = K.mean(x, axis=-1, keepdims=True)
+        # std = K.std(x, axis=-1, keepdims=True)
+        mean = K.mean(x, keepdims=True)
+        std = K.std(x, keepdims=True)
         return self.gamma * (x - mean) / (std + self.eps) + self.beta
 
     def compute_output_shape(self, input_shape):
@@ -47,15 +49,16 @@ class MyDebugWeights(Callback):
         self.tf_session = K.get_session()
 
     def on_batch_end(self, epoch, logs=None):
-        for layer in self.model.layers:
-            name = layer.name
-            for i, w in enumerate(layer.weights):
-                w_value = w.eval(session=self.tf_session)
-                w_norm, w_mean, w_std = calc_stats(np.reshape(w_value, -1))
-                self.weights.append((epoch, "{:s}/W_{:d}".format(name, i),
-                                     w_norm, w_mean, w_std))
-        for e, k, n, m, s in self.weights:
-            print("{:3d} {:20s} {:7.3f} {:7.3f} {:7.3f}".format(e, k, n, m, s))
+        pass
+        # for layer in self.model.layers:
+        #     name = layer.name
+        #     for i, w in enumerate(layer.weights):
+        #         w_value = w.eval(session=self.tf_session)
+        #         w_norm, w_mean, w_std = calc_stats(np.reshape(w_value, -1))
+        #         self.weights.append((epoch, "{:s}/W_{:d}".format(name, i),
+        #                              w_norm, w_mean, w_std))
+        # for e, k, n, m, s in self.weights:
+        #     print("{:3d} {:20s} {:7.3f} {:7.3f} {:7.3f}".format(e, k, n, m, s))
 
     # def on_batch_end(self, logs=None):
     #     for e, k, n, m, s in self.weights:

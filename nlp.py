@@ -8,7 +8,7 @@ import tensorflow as tf
 
 def convF(filters, kernal_size, **kwargs):
     def a(input):
-        norm = BatchNormalization()(input) # LayerNorm1D()(input)
+        norm = LayerNorm1D()(input) #BatchNormalization()(input)
         relu = Activation('relu')(norm)
         return Conv1D(filters, kernal_size, **kwargs)(relu)
     return a

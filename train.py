@@ -22,6 +22,17 @@ I = np.identity(27)
 def char_to_vector(char):
     return I[char]
 
+def to_chars(data):
+    b = np.zeros_like(data)
+    argm = data.argmax(2)
+    def app(x):
+        return argm == x
+    b[np.array([app(x) for x in np.arange(27)]).swapaxes(0, 1).swapaxes(1, 2)] = 1
+    chars = np.where(b == 1)[-1].reshape(b.shape[:2])
+    chars += 96
+    chars[chars == 96] = 32
+    return chars.astype('uint8').view('c').astype('unicode')
+
 def generate_lines(filename):
     with open(filename) as f:
         while f.seek(0) or True:
@@ -110,6 +121,16 @@ def valid_data(val_x, val_y):
     val_x, val_y, val_sample_weights = model._standardize_user_data(
         val_x, val_y, None)
     val_data = val_x + val_y + val_sample_weights
+
+    model.evaluate(val_x, val_y, batch_size=batch_size)
+
+    t = model.predict(val_x, batch_size=batch_size)
+    t_chars = to_chars(t)
+    p = to_chars(val_x[0])
+    print("\n".join(["".join(line) for line in t_chars[:5]]))
+    print("\n")
+    print("\n".join(["".join(line) for line in p[:5]]))
+
     if model.uses_learning_phase and not isinstance(K.learning_phase(),
                                                     int):
         val_data += [0.]
