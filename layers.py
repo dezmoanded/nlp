@@ -9,6 +9,7 @@ import keras
 import numpy as np
 from keras import callbacks as cbks
 from keras.utils.generic_utils import Progbar
+from keras.engine.base_layer import InputSpec
 
 class LayerNorm1D(Layer):
     def __init__(self, eps=1e-6, **kwargs):
@@ -86,3 +87,26 @@ def callbacks(model, callbacks, params):
         'metrics': callback_metrics,
     })
     return callbacks
+
+class ZeroPadding1D(Layer):
+    def __init__(self, padding=(1, 1), **kwargs):
+        super(ZeroPadding1D, self).__init__(**kwargs)
+        self.padding = padding
+        self.input_spec = InputSpec(ndim=3)
+
+    def compute_output_shape(self, input_shape):
+        if input_shape[1] is not None:
+            length = input_shape[1] + self.padding[0] + self.padding[1]
+        else:
+            length = None
+        return (input_shape[0],
+                length,
+                input_shape[2])
+
+    def call(self, inputs):
+        return K.temporal_padding(inputs, padding=self.padding)
+
+    def get_config(self):
+        config = {'padding': self.padding}
+        base_config = super(ZeroPadding1D, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))

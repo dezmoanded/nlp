@@ -1,6 +1,6 @@
 import tensorflow as tf
-from keras.layers import Input, Conv1D, Activation, MaxPool1D, UpSampling1D, ZeroPadding1D, Conv2DTranspose, BatchNormalization
-from layers import LayerNorm1D
+from keras.layers import Input, Conv1D, Activation, MaxPool1D, UpSampling1D, Conv2DTranspose, BatchNormalization, Concatenate
+from layers import LayerNorm1D, ZeroPadding1D
 from keras.layers.merge import Add
 from keras.models import Model
 from math import ceil
@@ -92,7 +92,11 @@ def model1(input_length):
 def model2(input_length):
     input = Input(shape=(input_length, 27))
 
+    connections = []
+
     def encode(input, filterss):
+        nonlocal connections
+        connections += [input]
         def not_finished():
             filters = filterss[0]
             conv = convF(filters, 3, padding='valid', strides=2)(input)
@@ -108,10 +112,15 @@ def model2(input_length):
     collapse = convF(encoded_features, conv_length, padding='valid', strides=1)
     encoded = collapse(encode(input, filterss))
 
+    connections = [connections[0]] + [ZeroPadding1D(padding=(0, 1))(l) for l in connections[1:]]
+
     def decode(input, filterss):
+        nonlocal connections
+        connected = Concatenate()([connections[-1], input])
+        connections = connections[:-1]
         def not_finished():
             filters = filterss[0]
-            up = UpSampling1D()(input)
+            up = UpSampling1D()(connected)
             conv = convF(filters, 3, padding='same', strides=1)(up)
             return decode(conv, filterss[1:])
 
