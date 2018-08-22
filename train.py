@@ -6,7 +6,7 @@ from copy import deepcopy
 from params import train_file, valid_file
 from layers import MyDebugWeights, callbacks
 
-from nlp import model2
+from nlp import model1, model2
 
 input_length = 512
 replace_n = 32
@@ -14,9 +14,9 @@ epochs = 15
 batch_size = 200
 train_lines = 9
 valid_lines = 1
-steps_per_epoch = 2000 # 30e6 / batch_size
+steps_per_epoch = 200 # 30e6 / batch_size
 
-model = model2(input_length)
+model = model1(input_length)
 
 I = np.identity(27)
 def char_to_vector(char):
@@ -122,7 +122,7 @@ def valid_data(val_x, val_y):
         val_x, val_y, None)
     val_data = val_x + val_y + val_sample_weights
 
-    model.evaluate(val_x, val_y, batch_size=batch_size)
+    stats = model.evaluate(val_x, val_y, batch_size=batch_size)
 
     t = model.predict(val_x, batch_size=batch_size)
     t_chars = to_chars(t)
@@ -134,7 +134,7 @@ def valid_data(val_x, val_y):
     if model.uses_learning_phase and not isinstance(K.learning_phase(),
                                                     int):
         val_data += [0.]
-    return val_data
+    return val_data, stats
 
 callbacks.on_train_begin()
 train = train_generator()
@@ -148,9 +148,9 @@ for epoch in range(epochs):
         callbacks.on_batch_end(batch)
         batch += 1
     x, y = next(validate)
-    val_data = valid_data(x, y)
+    val_data, stats = valid_data(x, y)
     for cbk in callbacks:
         cbk.validation_data = val_data
-    print("{} {}".format(epoch, val_data))
+    print("{} {}".format(epoch, stats))
     callbacks.on_epoch_end(epoch)
 callbacks.on_train_end()
