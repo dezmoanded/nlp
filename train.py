@@ -10,11 +10,11 @@ from nlp import model2
 
 input_length = 512
 replace_n = 32
-epochs = 5
-batch_size = 20
+epochs = 15
+batch_size = 200
 train_lines = 9
 valid_lines = 1
-steps_per_epoch = 4 # 30e6 / batch_size
+steps_per_epoch = 20 # 30e6 / batch_size
 
 model = model2(input_length)
 
@@ -147,12 +147,10 @@ for epoch in range(epochs):
         stats = model.train_on_batch(x, y)
         print("%i %f" % (epoch, stats))
         callbacks.on_batch_end(batch)
-
-        x, y = next(validate)
-        val_data = valid_data(x, y)
-        for cbk in callbacks:
-            cbk.validation_data = val_data
-        callbacks.on_epoch_end(epoch, {})
         batch += 1
+    x, y = next(validate)
+    val_data = valid_data(x, y)
+    for cbk in callbacks:
+        cbk.validation_data = val_data
     callbacks.on_epoch_end(epoch)
 callbacks.on_train_end()
